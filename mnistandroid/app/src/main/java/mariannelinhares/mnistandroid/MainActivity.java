@@ -175,8 +175,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
             //get the pixel data and store it in an array
 //            String sentence = typeHere.getText().toString();
 
+
             String sentence = "seeing a friend making love to a high school girl i accidentally was" +
                     " dragged into this room where the happenings had occurred i was disgusted at the reality";
+
+//            String sentence = "getting a good mark for a subject i had worked hard at but expected only a moderate mark";
 
             String line = null;
             HashMap<String, Integer> map = new HashMap();
@@ -200,7 +203,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
 //        System.out.print(map);
             String[] words = sentence.split(" ");
-            int[] encoded_words = new int[78];
+            int[] encoded_words = new int[40];
 
             for (int i = 0; i < words.length; i++) {
 
@@ -222,6 +225,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             Context context = this;
             Activity activity = (Activity) context;
             long[][] result = new long[1][1];
+//            float[][] result = new float[1][7];
 
             TensorFlowClassifier classifier = null;
             try {

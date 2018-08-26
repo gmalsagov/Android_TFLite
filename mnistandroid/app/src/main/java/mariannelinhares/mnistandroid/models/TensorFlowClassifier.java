@@ -46,19 +46,23 @@ public class TensorFlowClassifier {
     //must be a classification percetnage greater than this
     private static final float THRESHOLD = 0.1f;
 
-    private static final String MODEL_FILE = "model.tflite";
+    private static final String MODEL_FILE = "model2.tflite";
+    private static final String LABELS_FILE = "labels.txt";
     private static final String INPUT_NODE = "input_x";
-    private static final String OUTPUT_NODE = "output/predictions";
+    private static final String OUTPUT_NODE = "output/scores";
     private static final String[] OUTPUT_NODES = new String[] {OUTPUT_NODE};
 
-    private static final long[] INPUT_SIZE = {1, 78};
+    private static final long[] INPUT_SIZE = {1, 40};
     private static final long[][] OUTPUT_SIZE = new long[1][1];
+//    private static final float[][] OUTPUT_SIZE = new float[1][7];
 
 
     protected Interpreter tflite;
+    protected List<String> labelList;
 
     public TensorFlowClassifier(final Activity activity) throws IOException {
         tflite = new Interpreter(loadModelFile(activity, MODEL_FILE));
+        labelList = loadLabelList(activity.getAssets(), LABELS_FILE);
     }
 
     public long[][] predictEmotion(int[] data) throws IOException {
@@ -69,12 +73,11 @@ public class TensorFlowClassifier {
 //        Log.v("Input: ", INPUT_NODE);
 //        Log.v("Classifying: ", String.valueOf(data[0]));
 //        Log.v("Input size: ", String.valueOf(INPUT_SIZE));
-
+//        long[][] result = new long[1][];
         long startTime = SystemClock.uptimeMillis();
         tflite.run(data, OUTPUT_SIZE);
         long endTime = SystemClock.uptimeMillis();
         Log.d(TAG, "Time cost to run model inference: " + Long.toString(endTime - startTime));
-
 
 //        tfHelper.feed(INPUT_NODE, data, INPUT_SIZE);
 ////        tfHelper.feed("dropout_keep_prob", new float[]{1});
@@ -98,7 +101,7 @@ public class TensorFlowClassifier {
 
     //given a saved drawn model, lets read all the classification labels that are
     //stored and write them to our in memory labels list
-    private static List<String> readLabels(AssetManager am, String fileName) throws IOException {
+    private static List<String> loadLabelList(AssetManager am, String fileName) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(am.open(fileName)));
 
         String line;

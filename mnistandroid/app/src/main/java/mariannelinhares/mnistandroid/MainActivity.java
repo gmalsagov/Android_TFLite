@@ -54,12 +54,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 //encapsulates a classified image
 //public interface to the classification class, exposing a name and the recognize function
 import mariannelinhares.mnistandroid.models.Classification;
 import mariannelinhares.mnistandroid.models.Classifier;
 //contains logic for reading labels, creating classifier, and classifying
 import mariannelinhares.mnistandroid.models.TensorFlowClassifier;
+
+import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
@@ -130,34 +133,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onPause() {
         super.onPause();
     }
-    //creates a model object in memory using the saved tensorflow protobuf model file
-    //which contains all the learned weights
-//    private void loadModel() {
-//        //The Runnable interface is another way in which you can implement multi-threading other than extending the
-//        // //Thread class due to the fact that Java allows you to extend only one class. Runnable is just an interface,
-//        // //which provides the method run.
-//        // //Threads are implementations and use Runnable to call the method run().
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    //add 2 classifiers to our classifier arraylist
-//                    //the tensorflow classifier and the keras classifier
-//                    mClassifiers.add(
-//                            TensorFlowClassifier.create(getAssets(), "TensorFlow",
-//                                    "frozen_model.pb", "labels.txt", SENTENCE_LENGTH,
-//                                    "input_x", "output/predictions", true));
-//                    mClassifiers.add(
-//                            TensorFlowClassifier.create(getAssets(), "Keras",
-//                                    "opt_model.pb", "labels.txt", SENTENCE_LENGTH,
-//                                    "input_x", "output/predictions", false));
-//                } catch (final Exception e) {
-//                    //if they aren't found, throw an error!
-//                    throw new RuntimeException("Error initializing classifiers!", e);
-//                }
-//            }
-//        }).start();
-//    }
 
     @Override
     public void onClick(View view) {
@@ -172,28 +147,60 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
         else if (view.getId() == R.id.btn_class) {
             //if the user clicks the classify button
-            //get the pixel data and store it in an array
-//            String sentence = typeHere.getText().toString();
-
-
-            String sentence = "seeing a friend making love to a high school girl i accidentally was" +
-                    " dragged into this room where the happenings had occurred i was disgusted at the reality";
-
-//            String sentence = "getting a good mark for a subject i had worked hard at but expected only a moderate mark";
 
             String line = null;
+            String sentence = null;
+            String label_true = null;
+            String[] labels = new String[7];
             HashMap<String, Integer> map = new HashMap();
 
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(
+                BufferedReader br1 = new BufferedReader(new InputStreamReader(
                         getAssets().open("dictionary.txt")));
 
+                BufferedReader br2 = new BufferedReader(new InputStreamReader(
+                        getAssets().open("isear_test.csv")));
 
-                while((line=br.readLine())!=null){
+
+                BufferedReader br3 = new BufferedReader(new InputStreamReader(
+                        getAssets().open("labels.txt")));
+
+                int num = 0;
+
+//               Read labels file and store in array
+                while((line=br3.readLine())!=null) {
+                    labels[num] = line;
+                    num++;
+                }
+
+//                Read dictionary into a hashmap
+                while((line=br1.readLine())!=null) {
                     String str[] = line.split(",");
                     map.put(str[0], Integer.valueOf(str[1]));
 
                 }
+
+//                Generate random number within 0-1508 limit
+                Random rand = new Random();
+                int  n = rand.nextInt(1508);
+
+                int i = 0;
+                line = null;
+
+//                Skip through lines before n
+                for (int j = 0; j < n; j++){
+                    line = br2.readLine();
+                }
+
+//                Store label and sentence into variables
+                String str[] = line.split(",");
+                label_true = str[0];
+                sentence = str[1];
+
+//                Close buffer readers
+                br1.close();
+                br2.close();
+                br3.close();
 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -201,126 +208,50 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 e.printStackTrace();
             }
 
-//        System.out.print(map);
+//            Split sentence into words and store in array
             String[] words = sentence.split(" ");
             int[] encoded_words = new int[40];
 
+//            Encode words into int ids from dictionary
             for (int i = 0; i < words.length; i++) {
 
-                Integer value = map.get(words[i]);
-                int id = 0;
-                if (value != null) {
-                    id = Integer.parseInt(value.toString());
+                if (i < encoded_words.length) {
+                    Integer value = map.get(words[i]);
+
+                    int id = 0;
+                    if (value != null) {
+                        id = Integer.parseInt(value.toString());
+                    }
+
+                    encoded_words[i] = id;
+                } else {
+                    break;
                 }
-
-                encoded_words[i] = id;
-
             }
-//            for (int i = encoded_words.length; i < 40; i++){
-//                encoded_words[i] = 0;
-//            }
-
-            Log.v("result: ", Arrays.toString(encoded_words));
 
             Context context = this;
             Activity activity = (Activity) context;
             long[][] result = new long[1][1];
-//            float[][] result = new float[1][7];
 
+//            Initialize TensorflowClassifier class
             TensorFlowClassifier classifier = null;
             try {
+//                Pass activity to classifier object
                 classifier = new TensorFlowClassifier(activity);
+
+//                Run inference
                 result = classifier.predictEmotion(encoded_words);
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            Log.v("result: ", Arrays.deepToString(result));
-
-//            //init an empty string to fill with the classification output
-//            String text = "";
-//            //for each classifier in our array
-//            for (Classifier classifier : mClassifiers) {
-//                //perform classification on the image
-//                final Classification res = classifier.recognize(encoded_words);
-//                //if it can't classify, output a question mark
-//                if (res.getLabel() == null) {
-//                    text += classifier.name() + ": ?\n";
-//                } else {
-//                    //else output its name
-//                    text += String.format("%s: %s, %f\n", classifier.name(), res.getLabel(),
-//                            res.getConf());
-//                }
-//            }
-            resText.setText(Arrays.deepToString(result));
+//            Cast result into integer
+            int index = (int) result[0][0];
+//            Print sentence and emotion on screen
+            typeHere.setText(sentence);
+            resText.setText(labels[index]);
         }
     }
 
-//    @Override
-//    //this method detects which direction a user is moving
-//    //their finger and draws a line accordingly in that
-//    //direction
-//    public boolean onTouch(View v, MotionEvent event) {
-//        //get the action and store it as an int
-//        int action = event.getAction() & MotionEvent.ACTION_MASK;
-//        //actions have predefined ints, lets match
-//        //to detect, if the user has touched, which direction the users finger is
-//        //moving, and if they've stopped moving
-//
-//        //if touched
-//        if (action == MotionEvent.ACTION_DOWN) {
-//            //begin drawing line
-//            processTouchDown(event);
-//            return true;
-//            //draw line in every direction the user moves
-//        } else if (action == MotionEvent.ACTION_MOVE) {
-//            processTouchMove(event);
-//            return true;
-//            //if finger is lifted, stop drawing
-//        } else if (action == MotionEvent.ACTION_UP) {
-//            processTouchUp();
-//            return true;
-//        }
-//        return false;
-//    }
-
-    //draw line down
-
-//    private void processTouchDown(MotionEvent event) {
-//        //calculate the x, y coordinates where the user has touched
-//        mLastX = event.getX();
-//        mLastY = event.getY();
-//        //user them to calcualte the position
-//        drawView.calcPos(mLastX, mLastY, mTmpPiont);
-//        //store them in memory to draw a line between the
-//        //difference in positions
-//        float lastConvX = mTmpPiont.x;
-//        float lastConvY = mTmpPiont.y;
-//        //and begin the line drawing
-//        drawModel.startLine(lastConvX, lastConvY);
-//    }
-
-    //the main drawing function
-    //it actually stores all the drawing positions
-    //into the drawmodel object
-    //we actually render the drawing from that object
-    //in the drawrenderer class
-//    private void processTouchMove(MotionEvent event) {
-//        float x = event.getX();
-//        float y = event.getY();
-//
-//        drawView.calcPos(x, y, mTmpPiont);
-//        float newConvX = mTmpPiont.x;
-//        float newConvY = mTmpPiont.y;
-//        drawModel.addLineElem(newConvX, newConvY);
-//
-//        mLastX = x;
-//        mLastY = y;
-//        drawView.invalidate();
-//    }
-
-//    private void processTouchUp() {
-//        drawModel.endLine();
-//    }
 }

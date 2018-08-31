@@ -156,7 +156,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
             try {
                 BufferedReader br1 = new BufferedReader(new InputStreamReader(
-                        getAssets().open("dictionary.txt")));
+                        getAssets().open("vocab.csv")));
 
                 BufferedReader br2 = new BufferedReader(new InputStreamReader(
                         getAssets().open("isear_test.csv")));
@@ -191,11 +191,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 for (int j = 0; j < n; j++){
                     line = br2.readLine();
                 }
+//                Log.d(TAG, "message" + line);
 
 //                Store label and sentence into variables
-                String str[] = line.split(",");
-                label_true = str[0];
-                sentence = str[1];
+//                String str[] = line.split(",");
+                String[] splitted = null;
+
+                // Regular Expression to split sentences correctly
+                for(int k = 0; k < 10; k++)
+                    splitted = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+
+                label_true = splitted[0];
+                sentence = splitted[1];
 
 //                Close buffer readers
                 br1.close();
@@ -250,7 +257,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             int index = (int) result[0][0];
 //            Print sentence and emotion on screen
             typeHere.setText(sentence);
-            resText.setText(labels[index]);
+            resText.setText("True: " + label_true + "\n" +" Predicted: " + labels[index]);
         }
     }
 

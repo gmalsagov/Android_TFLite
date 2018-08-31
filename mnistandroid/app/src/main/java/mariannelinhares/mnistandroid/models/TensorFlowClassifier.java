@@ -31,7 +31,7 @@ public class TensorFlowClassifier {
     }
 
 //Initialize files and variables needed for inference
-    private static final String MODEL_FILE = "model.tflite";
+    private static final String MODEL_FILE = "model2.tflite";
     private static final long[][] OUTPUT_SIZE = new long[1][1];
 
 //Instantiate Interpreter class
